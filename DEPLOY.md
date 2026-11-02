@@ -168,44 +168,40 @@ Telegram 频道 `zaihuapd`。实测 24 小时窗口能抓到约 30 条。
 把 `docs/` 作为 Jekyll 源发布到 GitHub Pages，就能得到一个每日更新的网页版日报，
 首页（`docs/index.md`）会自动按 `lang: zh` 列出最近的日报。
 
-### 10.1 前提
+### 10.1 前提（现状）
 
-- 一个 GitHub **public** 仓库（免费账号的 Pages 只支持公开仓库）
-- 仓库里要能提交 `docs/_posts/*.md`；本部署已把上游那行 `docs/_posts/*.md`
-  的忽略规则从 `.gitignore` 移除（**日报会公开**，不想公开就别发布）
-- `.env` 里的 `GITHUB_TOKEN` 对该仓库有 **Contents: read/write**（fine-grained）
-  或 classic token 的 `repo` 权限
+- 仓库：`github.com/tianjian1201/Horizon`（public，已建；免费账号的 Pages 只支持公开仓库）
+- `docs/_config.yml` 已按该仓库配好 `baseurl: "/Horizon"`、`url: https://tianjian1201.github.io`
+- `.gitignore` 已放行 `docs/_posts/*.md`（**日报会公开**，不想公开就别发布）
+- `git remote publish` 已指向 `https://github.com/tianjian1201/Horizon.git`，本地历史已
+  `--unshallow`
+- **推送凭证**：`.env` 的 `GITHUB_TOKEN` 是给抓取用的只读 PAT，fine-grained token
+  默认不包含新建仓库。要么编辑它加上 `Horizon` 仓库 + `Contents: Read and write`，
+  要么新建一个只授权该仓库的 PAT 填到 `.env` 的 `HORIZON_PUSH_TOKEN`
+  （`scripts/publish.sh` 会优先用它，抓取 token 保持只读更安全）。
 
-### 10.2 先在网页建仓库
-
-github.com/new → 名称 `horizon` → Public → **不要**勾 README / .gitignore / license，
-建一个空仓库。（现有 token 没有建仓库权限，实测 `POST /user/repos` 返回 403，
-所以这一步只能网页点。）
-
-### 10.3 本地一次性配置
+### 10.2 首次推送
 
 ```bash
 cd /home/tianjian/tianjian/dsh/workspace/horizon
-git fetch --unshallow origin          # 浅克隆必须先补历史，否则 GitHub 拒绝 shallow push
-git remote add publish https://github.com/tianjian1201/horizon.git
-# 仓库名不是 horizon 时，同步改 docs/_config.yml 的 baseurl
-```
-
-首次推送（会把整个仓库 + 今天的日报推上去）：
-
-```bash
 scripts/publish.sh
 ```
 
-### 10.4 打开 Pages
+首次会推整个仓库（299 commits）+ 当天日报；之后每次只提交 `docs/_posts/`。
+推送失败若提示 `403 Permission ... denied`，就是 10.1 的凭证问题。
+
+### 10.3 打开 Pages（只能网页点）
 
 仓库 → Settings → Pages → **Source: Deploy from a branch** → Branch `main`，
 目录选 `/docs` → Save。第一次构建约 1 分钟。
 
-站点地址：`https://tianjian1201.github.io/horizon/`
-日报页形如 `https://tianjian1201.github.io/horizon/2026-11-02-summary-zh.html`
+> 这一步没法用 API 代做：现有 PAT 调 `POST /repos/.../pages` 返回
+> `Resource not accessible by personal access token`（缺 Pages 权限）。
 
-### 10.5 之后每天
+站点地址：`https://tianjian1201.github.io/Horizon/`
+日报页形如 `https://tianjian1201.github.io/Horizon/2026-11-02-summary-zh.html`
+
+### 10.4 之后每天
 
 生成完接一句发布即可：
 
@@ -223,7 +219,7 @@ docker compose run --rm horizon --hours 24 && scripts/publish.sh
 `data/config.json`、日志等被忽略的文件），有新日报才 commit，然后推 `main`；
 PAT 只在命令行里临时使用，不写进 `.git/config`，输出里也会把 token 打码。
 
-### 10.6 说明
+### 10.5 说明
 
 - 站点用的是 `docs/_config.yml` 的 `jekyll-theme-cayman` + `jekyll-feed`，
   两者都在 GitHub Pages 的插件白名单里，不需要 Actions 或任何构建配置。

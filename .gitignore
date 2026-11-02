@@ -63,3 +63,6 @@ logs/*.log
 todo.txt
 .ruff_cache
 .pytest_cache
+
+# SSH 443 推送用的 known_hosts（本地生成，不进仓库）
+.ssh_known_hosts

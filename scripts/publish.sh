@@ -24,11 +24,11 @@ fi
 
 git add docs/_posts
 if git diff --cached --quiet; then
-  echo "[publish] 没有新的日报，跳过"
-  exit 0
+  # 没有新日报也继续往下走：可能要补推本地尚未推送的提交（例如首次部署）
+  echo "[publish] 没有新的日报；检查是否有未推送的提交"
+else
+  git commit -m "docs: daily digest $(date +%F)"
 fi
-
-git commit -m "docs: daily digest $(date +%F)"
 
 if [ "${1:-}" = "--no-push" ]; then
   echo "[publish] 已提交，未推送（--no-push）"
@@ -41,9 +41,19 @@ if [ -z "$url" ]; then
   exit 1
 fi
 
-# .env 里的 PAT 只在命令行里用一次，不写进 .git/config
-if [ -n "${GITHUB_TOKEN:-}" ] && [[ "$url" == https://github.com/* ]]; then
-  push_url="https://x-access-token:${GITHUB_TOKEN}@${url#https://}"
+# 两种 remote 都支持：
+#  - https://github.com/...  → 用 .env 里的 PAT（HORIZON_PUSH_TOKEN 优先，其次 GITHUB_TOKEN）
+#  - git@github.com:...      → 用 SSH key；本机 22 端口被代理挡掉，强制走 ssh.github.com:443
+PUSH_TOKEN="${HORIZON_PUSH_TOKEN:-${GITHUB_TOKEN:-}}"
+if [[ "$url" == https://github.com/* ]]; then
+  if [ -z "$PUSH_TOKEN" ]; then
+    echo "[publish] remote 是 HTTPS 但 .env 里没有可用 PAT（HORIZON_PUSH_TOKEN / GITHUB_TOKEN）" >&2
+    exit 1
+  fi
+  push_url="https://x-access-token:${PUSH_TOKEN}@${url#https://}"
+elif [[ "$url" == git@github.com:* ]]; then
+  export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -F /dev/null -o HostName=ssh.github.com -p 443 -o IdentityFile=$HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=$PROJECT_DIR/.ssh_known_hosts}"
+  push_url="$url"
 else
   push_url="$url"
 fi
