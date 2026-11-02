@@ -5,11 +5,13 @@
 
 ## 目录里哪些是本地文件（git 不管）
 
-> **remote 约定**（和 fork 的用法不同，这里没有 GitHub 上的 fork 关系）：
-> `origin` = 你自己的 `tianjian1201/Horizon`（推送目标），
-> `upstream` = 上游 `Thysrael/Horizon`（只用来升级）。所以：
+> **remote 约定**（这是上游的 fork）：
+> `origin` = 你的 fork `tianjian1201/Horizon`（推送目标，GitHub 上标记
+> `forked from Thysrael/Horizon`），`upstream` = 上游 `Thysrael/Horizon`（只用来升级）。
 > - 发布：`git push origin main`（或 `scripts/publish.sh`）
-> - 升级上游：`git pull --ff-only upstream main`（本地 3 处改动见 §7，冲突时手工合）
+> - 升级上游：网页点 fork 页面的 `Sync fork`，或本地
+>   `git pull --ff-only upstream main`（本地 3 处改动见 §7，冲突时手工合）
+> - fork 的仓库**不能改 private**；哪天要私有化，得另建独立仓库（见 §10.6）
 
 | 文件 | 作用 | 是否被 git 忽略 |
 |---|---|---|
@@ -176,16 +178,19 @@ Telegram 频道 `zaihuapd`。实测 24 小时窗口能抓到约 30 条。
 
 ### 10.1 前提（现状）
 
-- 仓库：`github.com/tianjian1201/Horizon`（public，已建；免费账号的 Pages 只支持公开仓库）
+- 仓库：`github.com/tianjian1201/Horizon`，是 `Thysrael/Horizon` 的 **fork**（public；
+  免费账号的 Pages 只支持公开仓库）
+- 本地 `main` 已推送到 fork：`f5d0d14`（含部署配置、日报、发布脚本、remote 约定）
 - `docs/_config.yml` 已按该仓库配好 `baseurl: "/Horizon"`、`url: https://tianjian1201.github.io`
 - `.gitignore` 已放行 `docs/_posts/*.md`（**日报会公开**，不想公开就别发布）
-- `origin` 已指向 `git@github.com:tianjian1201/Horizon.git`，`upstream` 指向上游；
-  本地历史已 `--unshallow`
+- `origin` = fork（`git@github.com:tianjian1201/Horizon.git`），`upstream` = 上游；
+  本地历史已 `--unshallow`；仓库级 `core.sshCommand` 已配好走 443
 - **推送凭证**：走 SSH key（`~/.ssh/id_ed25519`），因为本机 22 端口被代理挡掉，
   `scripts/publish.sh` 自动改用 `ssh.github.com:443`，并把 known_hosts 落在
   仓库根的 `.ssh_known_hosts`（已 gitignore）。
   如果你以后改用 HTTPS remote，也可以把只授权该仓库、`Contents: Read and write`
   的 PAT 填到 `.env` 的 `HORIZON_PUSH_TOKEN`（优先于 `GITHUB_TOKEN`）。
+- 用 fork 的好处：GitHub 页面有 `Sync fork` 按钮可以一键跟上上游；代价是不能改私有。
 
 ### 10.2 首次推送
 
@@ -196,6 +201,9 @@ scripts/publish.sh
 
 首次会推整个仓库（299 commits）+ 当天日报；之后每次只提交 `docs/_posts/`。
 推送失败若提示 `403 Permission ... denied`，就是 10.1 的凭证问题。
+
+> 已完成的节点：本地 `main` 已推送到 fork（`f5d0d14`），远端 `docs/_posts/`
+> 里已有 2026-11-02 的日报，只剩下面的 Pages 开关没开。
 
 ### 10.3 打开 Pages（只能网页点）
 
@@ -235,4 +243,14 @@ PAT 只在命令行里临时使用，不写进 `.git/config`，输出里也会�
   `scripts/publish.sh` 里的 `HORIZON_PUBLISH_*` 环境变量（可选）。
 - 如果以后不想把生成内容混进 `main`，可以把 `HORIZON_PUBLISH_BRANCH` 设为
   `gh-pages` 并让 Pages 指向该分支（多一步，效果一样）。
+
+### 10.6 关于 fork
+
+- 当前仓库是上游的 fork，页面显示 `forked from Thysrael/Horizon`，好处是有
+  `Sync fork` 按钮；用本地 `git pull --ff-only upstream main` 也一样（推荐，能看清冲突）。
+- fork 有两个限制：**不能改 private**；「Sync fork」是 merge 上游，若上游改了我们碰过的
+  文件（`.gitignore`、`docs/_config.yml`、`src/ai/prompting/enrichment.py`）会产生冲突，
+  需要本地解决后再推。
+- 哪天想让这个仓库私有：新建一个独立仓库（不要 fork），把 `origin` 指过去推一遍即可；
+  Pages 会随之失效（免费账号私库不支持 Pages）。
 
