@@ -1,0 +1,23 @@
+# 本地部署覆盖层：不改上游 docker-compose.yml，仓库升级时不会产生合并冲突。
+# docker compose 会自动叠加本文件。
+services:
+  horizon:
+    environment:
+      # 容器内时区 -> 北京时间（日志时间戳可读；日报文件名里的日期由代码按 UTC 生成）
+      - TZ=Asia/Shanghai
+      # 以宿主机用户身份运行时 HOME 需要可写
+      - HOME=/tmp
+    # 镜像自带 horizon 用户是 uid 10001，直接用它会在 ./data 里写出 nobody 属主的
+    # 600 文件，宿主机（uid 1000）反而读不了日报。所以改以宿主机用户身份运行，
+    # 并用 --no-sync 跳过 uv 在 /app/.venv 里的写操作。
+    user: "${HORIZON_UID:-1000}:${HORIZON_GID:-1000}"
+    entrypoint: ["uv", "run", "--no-sync", "horizon"]
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro
+      - ./logs:/app/logs
+      # 让"复制到 docs/_posts"这步也能成功（否则容器内 /app/docs 只读，会打警告）
+      - ./docs/_posts:/app/docs/_posts
+      # python:3.11-slim 不带 tzdata，把宿主机的 zoneinfo 挂进去 TZ 才真正生效
+      - /usr/share/zoneinfo:/usr/share/zoneinfo:ro
+    command: ["--hours", "24"]

@@ -47,8 +47,8 @@ data/mcp-runs/
 data/x_cookies_*.json
 data/wechat_session.json
 
-docs/_posts/*.md
-
+# 本机部署若要发布 GitHub Pages，日报必须进仓库，故不再忽略 docs/_posts
+# （上游默认忽略：docs/_posts/*.md）
 # Logs
 logs/*.log
 *.log

@@ -19,8 +19,15 @@ GROUNDING_RULES = f"""- Treat the source item as the primary account of what hap
 
 def target_language_instruction(language: str) -> str:
     if language.lower() == "zh":
-        return "Simplified Chinese (language tag `zh`)"
-    return f"language `{language}`"
+        target = "Simplified Chinese (language tag `zh`)"
+    else:
+        target = f"language `{language}`"
+    # 中文源在英文日报里曾被原样保留中文标题/正文；显式要求翻译，只放行专有名词类内容。
+    return (
+        f"{target}. Translate every title, heading, quote, and body sentence into it; "
+        "keep only product names, code identifiers, URLs, and proper nouns in their "
+        "original form, and never paste source-language sentences untranslated"
+    )
 
 
 def tool_planning_prompt(blocks: list[ProfileBlock]) -> str:

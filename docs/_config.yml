@@ -1,8 +1,9 @@
 theme: jekyll-theme-cayman
 title: Horizon Daily
 description: AI-curated daily digest of tech and research news
+# 发布到 https://tianjian1201.github.io/Horizon/ —— 仓库名变了要同步改 baseurl
 baseurl: "/Horizon" # the subpath of your site, e.g. /blog
-url: "https://thysrael.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://tianjian1201.github.io" # the base hostname & protocol for your site
 
 # Build settings
 markdown: kramdown
