@@ -66,3 +66,6 @@ todo.txt
 
 # SSH 443 推送用的 known_hosts（本地生成，不进仓库）
 .ssh_known_hosts
+
+# 容器 cron 用的 DOCKER_CONFIG 目录（避免依赖 ~/.docker）
+.docker-config/

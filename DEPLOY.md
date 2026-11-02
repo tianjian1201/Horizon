@@ -77,20 +77,21 @@ successfully`，只是入选 0 条。判断成败要看日报内容，不能只�
 
 ## 4. 每日定时（宿主机 cron）
 
-`docker compose run` 是一次性任务，须由外部定时器触发：
-
-```bash
-crontab -e
-```
+**已安装**（用户级 crontab，每天 08:30 北京时间生成并发布）：
 
 ```cron
-0 9 * * * cd /home/tianjian/tianjian/dsh/workspace/horizon && /usr/bin/docker compose run --rm -T horizon --hours 24 >> logs/cron.log 2>&1
+30 8 * * * cd /home/tianjian/tianjian/dsh/workspace/horizon && DOCKER_CONFIG=/home/tianjian/tianjian/dsh/workspace/horizon/.docker-config /usr/bin/docker compose run --rm -T horizon --hours 24 >> logs/cron.log 2>&1 && scripts/publish.sh >> logs/cron.log 2>&1
 ```
 
 要点：
 - `-T` 必加（cron 里没有 TTY）
 - 用 `docker compose run --rm`，不要 `up -d`（跑完即退）
-- 日志在 `logs/cron.log`
+- `DOCKER_CONFIG` 指向仓库内 `.docker-config/`（已 gitignore），避免 cron 依赖 `~/.docker` 可写
+- 生成日志和发布日志都在 `logs/cron.log`；`&&` 保证生成失败就不发布
+- 08:30 CST 对应 00:30 UTC，日报文件名日期仍是当天（文件名按 UTC 日期生成）
+- 手动补跑：直接执行上面 `cd` 之后的部分
+- 验证 cron 环境：`env -i HOME=$HOME PATH=/usr/bin:/bin SHELL=/bin/sh /bin/sh -c 'cd … && scripts/publish.sh'`
+  （已实测）
 
 ## 5. 开飞书推送（可选）
 
@@ -114,9 +115,18 @@ crontab -e
 | 改「新闻 / 长文」怎么读 | `profiles/<id>/` 下的 `analysis.md`、`enrichment.md` |
 | 语言（当前只中文） | `ai.languages`，现在是 `["zh"]`；加 `"en"` 即恢复中英双语 |
 
-当前启用中的源：Hacker News、GitHub Releases（vllm、uv）、RSS（Simon Willison /
-vLLM Blog / Sean Goedecke / GitHub Trending / 阮一峰 / 机器之心 / 少数派）、
-Telegram 频道 `zaihuapd`。实测 24 小时窗口能抓到约 30 条。
+当前启用中的源（共 20 个 RSS + 3 类其他）：
+
+- **Hacker News**：热门 30 条，分数 ≥120
+- **GitHub Releases**：vllm、uv
+- **Telegram**：`zaihuapd`
+- **RSS（英文）**：Simon Willison、vLLM Blog、Sean Goedecke、GitHub Trending、
+  Lobsters、Hugging Face Blog、OpenAI News、Google AI Blog、Cloudflare Blog、
+  Phoronix、Julia Evans、Dan Luu
+- **RSS（中文）**：阮一峰、机器之心、少数派、奇客 Solidot、InfoQ 中文、开源中国、V2EX
+
+其中 Cloudflare / Julia Evans / Dan Luu 开了 `content_extractor: trafilatura`（抓全文，
+适合技术长文）；新闻类站点不抓全文，省时间和 token。
 
 已知不可用或不建议开：
 - **Reddit**：默认关闭。本机出口访问 `reddit.com/*.json` 返回 403 已被限流。
