@@ -213,8 +213,10 @@ scripts/publish.sh
 > 这一步没法用 API 代做：现有 PAT 调 `POST /repos/.../pages` 返回
 > `Resource not accessible by personal access token`（缺 Pages 权限）。
 
-站点地址：`https://tianjian1201.github.io/Horizon/`
-日报页形如 `https://tianjian1201.github.io/Horizon/2026-11-02-summary-zh.html`
+站点地址：`https://tianjian1201.github.io/Horizon/`（首页按 `lang: zh` 列最近日报）
+日报页 URL 是 Jekyll 默认 permalink：`/Horizon/YYYY/MM/DD/summary-zh.html`，
+例如 `https://tianjian1201.github.io/Horizon/2026/11/02/summary-zh.html`。
+（不是 `/2026-11-02-summary-zh.html`，别照文件名猜 URL。）
 
 ### 10.4 之后每天
 
