@@ -5,6 +5,12 @@
 
 ## 目录里哪些是本地文件（git 不管）
 
+> **remote 约定**（和 fork 的用法不同，这里没有 GitHub 上的 fork 关系）：
+> `origin` = 你自己的 `tianjian1201/Horizon`（推送目标），
+> `upstream` = 上游 `Thysrael/Horizon`（只用来升级）。所以：
+> - 发布：`git push origin main`（或 `scripts/publish.sh`）
+> - 升级上游：`git pull --ff-only upstream main`（本地 3 处改动见 §7，冲突时手工合）
+
 | 文件 | 作用 | 是否被 git 忽略 |
 |---|---|---|
 | `.env` | 密钥（DeepSeek key、可选 webhook/token），权限 600 | 是 |
@@ -18,7 +24,7 @@
 
 ```bash
 cd /home/tianjian/tianjian/dsh/workspace/horizon
-git pull --ff-only && docker compose build   # 有新依赖时必须 rebuild
+git pull --ff-only upstream main && docker compose build   # 有新依赖时必须 rebuild
 ```
 
 ## 1. 填 API Key（唯一必须做的事）
@@ -140,7 +146,7 @@ Telegram 频道 `zaihuapd`。实测 24 小时窗口能抓到约 30 条。
    Telegram 频道）会原样保留中文标题和正文，导致英文日报中英混杂。补了一句
    "Translate every title, heading, quote, and body sentence… keep only product
    names, code identifiers, URLs, and proper nouns"，实测英文版已全英文。
-   ⚠️ 这处是**本地补丁**，`git pull` 若与该文件冲突，优先保留上游新逻辑再看是否需要
+   ⚠️ 这处是**本地补丁**，`git pull upstream main` 若与该文件冲突，优先保留上游新逻辑再看是否需要
    重新补这句话；`git status` 看到 `src/ai/prompting/enrichment.py` 被修改属正常。
 
 ## 8. 排障
@@ -173,12 +179,13 @@ Telegram 频道 `zaihuapd`。实测 24 小时窗口能抓到约 30 条。
 - 仓库：`github.com/tianjian1201/Horizon`（public，已建；免费账号的 Pages 只支持公开仓库）
 - `docs/_config.yml` 已按该仓库配好 `baseurl: "/Horizon"`、`url: https://tianjian1201.github.io`
 - `.gitignore` 已放行 `docs/_posts/*.md`（**日报会公开**，不想公开就别发布）
-- `git remote publish` 已指向 `https://github.com/tianjian1201/Horizon.git`，本地历史已
-  `--unshallow`
-- **推送凭证**：`.env` 的 `GITHUB_TOKEN` 是给抓取用的只读 PAT，fine-grained token
-  默认不包含新建仓库。要么编辑它加上 `Horizon` 仓库 + `Contents: Read and write`，
-  要么新建一个只授权该仓库的 PAT 填到 `.env` 的 `HORIZON_PUSH_TOKEN`
-  （`scripts/publish.sh` 会优先用它，抓取 token 保持只读更安全）。
+- `origin` 已指向 `git@github.com:tianjian1201/Horizon.git`，`upstream` 指向上游；
+  本地历史已 `--unshallow`
+- **推送凭证**：走 SSH key（`~/.ssh/id_ed25519`），因为本机 22 端口被代理挡掉，
+  `scripts/publish.sh` 自动改用 `ssh.github.com:443`，并把 known_hosts 落在
+  仓库根的 `.ssh_known_hosts`（已 gitignore）。
+  如果你以后改用 HTTPS remote，也可以把只授权该仓库、`Contents: Read and write`
+  的 PAT 填到 `.env` 的 `HORIZON_PUSH_TOKEN`（优先于 `GITHUB_TOKEN`）。
 
 ### 10.2 首次推送
 
